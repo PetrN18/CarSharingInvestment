@@ -85,3 +85,44 @@ contract CarSharingInvestment {
         payable(owner).transfer(amount);
     }
 }
+function totalCouponAmount() public view returns (uint256) {
+        uint256 totalAmount = 0;
+        for (uint256 i = 0; i < investorAddresses.length; i++) {
+            address investorAddress = investorAddresses[i];
+            Investor storage investor = investors[investorAddress];
+            if (investor.tokenBalance > 0) {
+                totalAmount += (investor.tokenBalance * annualInterestRate / 2) / 100;
+            }
+        }
+        return totalAmount;
+    }
+
+    function fundContract() external payable onlyOwner {
+        require(msg.value > 0, "Must send some ether");
+        emit ContractFunded(msg.sender, msg.value);
+    }
+
+    function withdrawFunds(uint256 amount) external onlyOwner {
+        require(address(this).balance >= amount, "Insufficient contract balance");
+        payable(owner).transfer(amount);
+        emit FundsWithdrawn(msg.sender, amount);
+    }
+
+    function getInvestorAddresses(uint256 start, uint256 count) external view returns (address[] memory) {
+        uint256 end = start + count > investorAddresses.length ? investorAddresses.length : start + count;
+        address[] memory slice = new address[](end - start);
+        for (uint256 i = start; i < end; i++) {
+            slice[i - start] = investorAddresses[i];
+        }
+        return slice;
+    }
+
+    function isInvestor(address _address) internal view returns (bool) {
+        for (uint256 i = 0; i < investorAddresses.length; i++) {
+            if (investorAddresses[i] == _address) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
